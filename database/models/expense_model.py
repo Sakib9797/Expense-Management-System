@@ -121,3 +121,25 @@ class Expense:
         except Exception as e:
             print(f"Error getting category spending: {e}")
             return []
+
+    @staticmethod
+    def delete_expense(expense_id, user_id):
+        """Delete an expense."""
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+
+            # Verify the expense belongs to the user
+            cursor.execute("""
+                DELETE FROM expenses
+                WHERE id = ? AND user_id = ?
+            """, (expense_id, user_id))
+
+            conn.commit()
+            deleted = cursor.rowcount > 0
+            conn.close()
+
+            return {'success': deleted}
+        except Exception as e:
+            print(f"Error deleting expense: {e}")
+            return {'success': False, 'message': str(e)}

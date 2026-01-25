@@ -2,7 +2,7 @@
 
 from datetime import datetime, timedelta
 from database.db_config import get_db_connection
-from backend.models.expense_model import Expense
+from database.models.expense_model import Expense
 
 
 class SpendingInsight:

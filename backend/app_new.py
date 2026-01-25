@@ -14,6 +14,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 from database.db_config import init_db
 from backend.routes import auth_bp, user_bp, group_bp
 from backend.routes.spending_routes import spending_bp
+from backend.routes.chat_routes import chat_bp
 
 
 app = Flask(
@@ -46,6 +47,7 @@ app.register_blueprint(auth_bp)
 app.register_blueprint(user_bp)
 app.register_blueprint(group_bp)
 app.register_blueprint(spending_bp)
+app.register_blueprint(chat_bp)
 
 
 @app.route("/")

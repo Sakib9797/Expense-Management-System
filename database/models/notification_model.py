@@ -7,6 +7,32 @@ class Notification:
     """Notification model for managing user notifications."""
 
     @staticmethod
+    def create(user_id, group_id, message):
+        """
+        Create a new notification for a user.
+        
+        Args:
+            user_id (int): User ID.
+            group_id (int): Group ID.
+            message (str): Notification message.
+            
+        Returns:
+            bool: True if successful, False otherwise.
+        """
+        try:
+            with get_db_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    INSERT INTO notifications (user_id, group_id, message)
+                    VALUES (?, ?, ?)
+                ''', (user_id, group_id, message))
+                conn.commit()
+                return True
+        except Exception as e:
+            print(f"Error creating notification: {e}")
+            return False
+
+    @staticmethod
     def get_user_notifications(email):
         """
         Get all notifications for a user.

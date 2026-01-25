@@ -1,8 +1,8 @@
 """Authentication controller."""
 
 from flask import request, jsonify
-from backend.models.user_model import User
-from backend.models.password_reset_model import PasswordReset
+from database.models.user_model import User
+from database.models.password_reset_model import PasswordReset
 from backend.services.email_service import EmailService
 
 

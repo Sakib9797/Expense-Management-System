@@ -54,11 +54,28 @@ const AddExpense = () => {
       if (res.ok) {
         toast.success('Expense added successfully!');
         
+        console.log('Response data:', data);
+        console.log('Notifications:', data.notifications);
+        
         // Show notifications if any
         if (data.notifications && data.notifications.length > 0) {
-          data.notifications.forEach((notif: string) => {
-            toast.warning(notif, { duration: 5000 });
+          data.notifications.forEach((notif: any) => {
+            const message = typeof notif === 'string' ? notif : notif.message;
+            console.log('Showing notification:', notif.type, message);
+            if (notif.type === 'exceeded') {
+              toast.error(message, { duration: 8000 });
+            } else if (notif.type === 'warning_90') {
+              toast.warning(message, { duration: 6000 });
+            } else if (notif.type === 'warning_80') {
+              toast.info(message, { duration: 5000 });
+            } else if (notif.type === 'insight') {
+              toast.success(`📊 ${message}`, { duration: 7000 });
+            } else {
+              toast.info(message, { duration: 5000 });
+            }
           });
+        } else {
+          console.log('No notifications in response');
         }
         
         navigate(`/group/${groupId}/spending`);

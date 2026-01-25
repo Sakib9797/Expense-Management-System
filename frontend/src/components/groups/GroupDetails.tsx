@@ -1,16 +1,20 @@
-
 import { useState, useContext, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import GroupContext, { Group } from '../../contexts/GroupContext';
 import AuthContext from '../../contexts/AuthContext';
 import { toast } from '../../components/ui/sonner';
 import Header from '../common/Header';
+import GroupChat from './GroupChat';
+import DirectMessages from './DirectMessages';
+import { Users, MessageCircle, MessageSquare, Trash2, Crown } from 'lucide-react';
 
 const GroupDetails = () => {
   const { groupId } = useParams<{ groupId: string }>();
   const [group, setGroup] = useState<Group | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isLeavingGroup, setIsLeavingGroup] = useState(false);
+  const [removingMemberId, setRemovingMemberId] = useState<number | null>(null);
+  const [activeTab, setActiveTab] = useState<'members' | 'chat' | 'dm'>('members');
   
   const { getGroupDetails, leaveGroup } = useContext(GroupContext);
   const { user } = useContext(AuthContext);
@@ -27,11 +31,18 @@ const GroupDetails = () => {
   const handleLeaveGroup = async () => {
     if (!groupId) return;
     
+    const isOwner = group?.createdBy === user?.email;
+    const confirmMessage = isOwner 
+      ? 'As the owner, leaving will transfer ownership to the next member. Continue?' 
+      : 'Are you sure you want to leave this group?';
+    
+    if (!confirm(confirmMessage)) return;
+    
     setIsLeavingGroup(true);
     try {
       const success = await leaveGroup(groupId);
       if (success) {
-        toast.success('You have left the group');
+        toast.success(isOwner ? 'Ownership transferred. You have left the group' : 'You have left the group');
         navigate('/groups');
       } else {
         toast.error('Failed to leave the group');
@@ -40,6 +51,43 @@ const GroupDetails = () => {
       toast.error('An error occurred');
     } finally {
       setIsLeavingGroup(false);
+    }
+  };
+
+  const handleRemoveMember = async (memberEmail: string, memberName: string) => {
+    if (!groupId || !user) return;
+
+    if (!confirm(`Are you sure you want to remove ${memberName} from the group?`)) {
+      return;
+    }
+
+    setRemovingMemberId(group?.members.find(m => m.email === memberEmail)?.userId || null);
+
+    try {
+      const res = await fetch(`http://127.0.0.1:5000/api/group/${groupId}/members/remove`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          owner_email: user.email,
+          member_email: memberEmail
+        })
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        toast.success('Member removed successfully');
+        // Refresh group data
+        const updatedGroup = getGroupDetails(groupId);
+        setGroup(updatedGroup);
+      } else {
+        toast.error(data.message || 'Failed to remove member');
+      }
+    } catch (error) {
+      console.error('Error removing member:', error);
+      toast.error('An error occurred');
+    } finally {
+      setRemovingMemberId(null);
     }
   };
 
@@ -122,47 +170,146 @@ const GroupDetails = () => {
             </p>
           </div>
           
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-lg font-semibold mb-4">Group Members ({group.members.length})</h2>
-            
-            <div className="overflow-hidden">
-              <table className="min-w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Name
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Email
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Joined
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {group.members.map((member) => (
-                    <tr key={member.userId} className={member.userId === user?.id ? "bg-purple-50" : ""}>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
-                          {member.fullName || "Anonymous"}
-                          {member.userId === user?.id && (
-                            <span className="ml-2 text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full">
-                              You
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-500">{member.email}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(member.joinedAt).toLocaleDateString()}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          {/* Tabs */}
+          <div className="bg-white rounded-lg shadow-md mb-6">
+            <div className="border-b">
+              <div className="flex">
+                <button
+                  onClick={() => setActiveTab('members')}
+                  className={`flex-1 px-6 py-4 text-center font-medium transition flex items-center justify-center gap-2 ${
+                    activeTab === 'members'
+                      ? 'border-b-2 border-purple-600 text-purple-600'
+                      : 'text-gray-600 hover:text-gray-800'
+                  }`}
+                >
+                  <Users size={20} />
+                  Members
+                </button>
+                <button
+                  onClick={() => setActiveTab('chat')}
+                  className={`flex-1 px-6 py-4 text-center font-medium transition flex items-center justify-center gap-2 ${
+                    activeTab === 'chat'
+                      ? 'border-b-2 border-purple-600 text-purple-600'
+                      : 'text-gray-600 hover:text-gray-800'
+                  }`}
+                >
+                  <MessageCircle size={20} />
+                  Group Chat
+                </button>
+                <button
+                  onClick={() => setActiveTab('dm')}
+                  className={`flex-1 px-6 py-4 text-center font-medium transition flex items-center justify-center gap-2 ${
+                    activeTab === 'dm'
+                      ? 'border-b-2 border-purple-600 text-purple-600'
+                      : 'text-gray-600 hover:text-gray-800'
+                  }`}
+                >
+                  <MessageSquare size={20} />
+                  Direct Messages
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6">
+              {activeTab === 'members' && (
+                <div>
+                  <h2 className="text-lg font-semibold mb-4">Group Members ({group.members.length})</h2>
+                  <div className="overflow-hidden">
+                    <table className="min-w-full">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Name
+                          </th>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Email
+                          </th>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Joined
+                          </th>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Actions
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {group.members.map((member) => {
+                          const isOwner = group.createdBy === member.email;
+                          const isCurrentUser = member.email === user?.email;
+                          const isUserOwner = group.createdBy === user?.email;
+
+                          return (
+                            <tr key={member.userId} className={isCurrentUser ? "bg-purple-50" : ""}>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="flex items-center gap-2">
+                                  <div className="text-sm font-medium text-gray-900">
+                                    {member.fullName || member.email.split('@')[0]}
+                                    {isCurrentUser && (
+                                      <span className="ml-2 text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full">
+                                        You
+                                      </span>
+                                    )}
+                                    {isOwner && (
+                                      <span className="ml-2 text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full inline-flex items-center gap-1">
+                                        <Crown size={12} />
+                                        Owner
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="text-sm text-gray-500">{member.email}</div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {new Date(member.joinedAt).toLocaleDateString()}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                {isCurrentUser && isUserOwner ? (
+                                  // Owner on their own row - show nothing
+                                  null
+                                ) : isCurrentUser ? (
+                                  // Regular member on their own row - show Leave button
+                                  <button
+                                    onClick={handleLeaveGroup}
+                                    disabled={isLeavingGroup}
+                                    className="text-red-600 hover:text-red-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                                  >
+                                    <Trash2 size={16} />
+                                    {isLeavingGroup ? 'Leaving...' : 'Leave'}
+                                  </button>
+                                ) : isUserOwner ? (
+                                  // Owner viewing other members - show Remove button
+                                  <button
+                                    onClick={() => handleRemoveMember(member.email, member.fullName || member.email.split('@')[0])}
+                                    disabled={removingMemberId === member.userId}
+                                    className="text-red-600 hover:text-red-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                                  >
+                                    <Trash2 size={16} />
+                                    {removingMemberId === member.userId ? 'Removing...' : 'Remove'}
+                                  </button>
+                                ) : null}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'chat' && (
+                <div className="h-[600px]">
+                  <GroupChat />
+                </div>
+              )}
+
+              {activeTab === 'dm' && (
+                <div className="h-[600px]">
+                  <DirectMessages />
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -172,3 +319,4 @@ const GroupDetails = () => {
 };
 
 export default GroupDetails;
+

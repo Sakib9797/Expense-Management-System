@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useContext } from 'react';
 import { Bell, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -7,6 +7,10 @@ import AuthContext from '../../contexts/AuthContext';
 const Header = ({ showBackButton = false, onBack }: { showBackButton?: boolean; onBack?: () => void }) => {
   const { user, logout } = useContext(AuthContext);
   const [notifications, setNotifications] = useState([]);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+  const notificationRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchNotifications = async () => {
@@ -33,6 +37,21 @@ const Header = ({ showBackButton = false, onBack }: { showBackButton?: boolean; 
 
     fetchNotifications();
   }, [user]);
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setShowUserMenu(false);
+      }
+      if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
+        setShowNotifications(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   return (
     <header className="bg-purple-700 text-white p-4 flex justify-between items-center">
@@ -74,45 +93,62 @@ const Header = ({ showBackButton = false, onBack }: { showBackButton?: boolean; 
 
       <div className="flex items-center space-x-4">
 {user && (
-  <div className="relative group">
-    <button className="p-2 rounded-full hover:bg-purple-600 relative">
+  <div className="relative" ref={notificationRef}>
+    <button 
+      onClick={() => setShowNotifications(!showNotifications)}
+      className="p-2 rounded-full hover:bg-purple-600 relative"
+    >
       <Bell size={20} />
       {notifications.length > 0 && (
         <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
       )}
     </button>
 
-    <div className="absolute right-0 mt-2 w-64 bg-white text-black rounded-md shadow-lg py-1 z-10 hidden group-hover:block max-h-60 overflow-y-auto">
-      {notifications.length === 0 ? (
-        <div className="px-4 py-2 text-sm text-gray-500">No new notifications</div>
-      ) : (
-        notifications.map((n) => (
-          <div key={n.id} className="px-4 py-2 text-sm text-gray-700 border-b last:border-none">
-            {n.message}
-            <div className="text-xs text-gray-400">{new Date(n.createdAt).toLocaleString()}</div>
-          </div>
-        ))
-      )}
-    </div>
+    {showNotifications && (
+      <div className="absolute right-0 mt-2 w-64 bg-white text-black rounded-md shadow-lg py-1 z-10 max-h-60 overflow-y-auto">
+        {notifications.length === 0 ? (
+          <div className="px-4 py-2 text-sm text-gray-500">No new notifications</div>
+        ) : (
+          notifications.map((n) => (
+            <div key={n.id} className="px-4 py-2 text-sm text-gray-700 border-b last:border-none">
+              {n.message}
+              <div className="text-xs text-gray-400">{new Date(n.createdAt).toLocaleString()}</div>
+            </div>
+          ))
+        )}
+      </div>
+    )}
   </div>
 )}
 
         {user && (
-          <div className="relative group">
-            <button className="p-2 rounded-full hover:bg-purple-600">
+          <div className="relative" ref={userMenuRef}>
+            <button 
+              onClick={() => setShowUserMenu(!showUserMenu)}
+              className="p-2 rounded-full hover:bg-purple-600"
+            >
               <User size={20} />
             </button>
-            <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 hidden group-hover:block">
-              <Link to="/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                Profile
-              </Link>
-              <button
-                onClick={logout}
-                className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-              >
-                Logout
-              </button>
-            </div>
+            {showUserMenu && (
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
+                <Link 
+                  to="/profile" 
+                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  onClick={() => setShowUserMenu(false)}
+                >
+                  Profile
+                </Link>
+                <button
+                  onClick={() => {
+                    setShowUserMenu(false);
+                    logout();
+                  }}
+                  className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  Logout
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

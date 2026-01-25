@@ -74,7 +74,7 @@ python -m py_compile backend/app_new.py
 
 ### 2. Test Imports
 ```bash
-python -c "import sys; sys.path.insert(0, '.'); from backend.models.user_model import User; print('✓ Imports OK')"
+python -c "import sys; sys.path.insert(0, '.'); from database.models.user_model import User; print('✓ Imports OK')"
 ```
 
 ### 3. Check Database Schema

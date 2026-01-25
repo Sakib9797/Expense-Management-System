@@ -296,7 +296,7 @@ class Group:
     @staticmethod
     def leave_group(group_id, email):
         """
-        Leave a group.
+        Leave a group. If owner leaves, transfer ownership to next oldest member.
         
         Args:
             group_id (int): Group ID.
@@ -315,6 +315,29 @@ class Group:
 
                 user_id = user[0]
 
+                # Check if user is the owner
+                cursor.execute('SELECT email FROM groups WHERE id = ?', (group_id,))
+                group = cursor.fetchone()
+                if not group:
+                    return {'success': False, 'message': 'Group not found'}
+                
+                is_owner = group[0] == email
+
+                # If owner is leaving, transfer ownership to next oldest member
+                if is_owner:
+                    cursor.execute('''
+                        SELECT user_id, email FROM group_members
+                        WHERE group_id = ? AND user_id != ?
+                        ORDER BY joined_date ASC
+                        LIMIT 1
+                    ''', (group_id, user_id))
+                    next_owner = cursor.fetchone()
+                    
+                    if next_owner:
+                        # Transfer ownership
+                        cursor.execute('UPDATE groups SET email = ? WHERE id = ?', 
+                                     (next_owner[1], group_id))
+
                 # Remove member
                 cursor.execute('DELETE FROM group_members WHERE group_id = ? AND user_id = ?', 
                              (group_id, user_id))
@@ -326,3 +349,96 @@ class Group:
 
         except Exception as e:
             return {'success': False, 'message': str(e)}
+
+    @staticmethod
+    def remove_member(group_id, owner_email, member_email):
+        """
+        Remove a member from group (owner only).
+        
+        Args:
+            group_id (int): Group ID.
+            owner_email (str): Owner's email.
+            member_email (str): Member to remove email.
+            
+        Returns:
+            dict: Result dictionary with success status and message.
+        """
+        try:
+            with get_db_connection() as conn:
+                cursor = conn.cursor()
+                
+                # Verify the requester is the owner
+                cursor.execute('SELECT email FROM groups WHERE id = ?', (group_id,))
+                group = cursor.fetchone()
+                if not group:
+                    return {'success': False, 'message': 'Group not found'}
+                
+                if group[0] != owner_email:
+                    return {'success': False, 'message': 'Only the group owner can remove members'}
+                
+                # Cannot remove self this way
+                if owner_email == member_email:
+                    return {'success': False, 'message': 'Use leave group to remove yourself'}
+                
+                # Get member user ID
+                cursor.execute('SELECT id FROM users WHERE email = ?', (member_email,))
+                member = cursor.fetchone()
+                if not member:
+                    return {'success': False, 'message': 'Member not found'}
+                
+                member_id = member[0]
+                
+                # Remove member
+                cursor.execute('DELETE FROM group_members WHERE group_id = ? AND user_id = ?', 
+                             (group_id, member_id))
+                
+                if cursor.rowcount == 0:
+                    return {'success': False, 'message': 'Member not in group'}
+                
+                cursor.execute('UPDATE groups SET member_count = member_count - 1 WHERE id = ?', 
+                             (group_id,))
+                conn.commit()
+
+                return {'success': True, 'message': 'Member removed successfully'}
+
+        except Exception as e:
+            return {'success': False, 'message': str(e)}
+
+    @staticmethod
+    def get_group_members(group_id):
+        """
+        Get all members of a specific group.
+        
+        Args:
+            group_id (int): Group ID.
+            
+        Returns:
+            list: List of group members with their details.
+        """
+        try:
+            with get_db_connection() as conn:
+                cursor = conn.cursor()
+                
+                cursor.execute('''
+                    SELECT gm.id, gm.user_id, gm.email, u.full_name, gm.joined_date
+                    FROM group_members gm
+                    JOIN users u ON gm.user_id = u.id
+                    WHERE gm.group_id = ?
+                    ORDER BY gm.joined_date ASC
+                ''', (group_id,))
+                
+                rows = cursor.fetchall()
+                members = []
+                for row in rows:
+                    members.append({
+                        'id': row[0],
+                        'user_id': row[1],
+                        'email': row[2],
+                        'full_name': row[3],
+                        'joined_date': row[4]
+                    })
+                
+                return members
+        except Exception as e:
+            print(f"Error getting group members: {e}")
+            return []

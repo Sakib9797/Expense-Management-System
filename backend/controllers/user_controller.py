@@ -1,7 +1,7 @@
 """User profile controller."""
 
 from flask import request, jsonify
-from backend.models.user_model import User
+from database.models.user_model import User
 
 
 class UserController:

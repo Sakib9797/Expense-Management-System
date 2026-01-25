@@ -54,6 +54,22 @@ def leave_group(group_id):
     return GroupController.leave_group(group_id)
 
 
+@group_bp.route('/group/<int:group_id>/members', methods=['GET'])
+def get_group_members(group_id):
+    """Get group members endpoint."""
+    limiter = current_app.limiter
+    limiter.limit("30 per minute")(lambda: None)()
+    return GroupController.get_group_members(group_id)
+
+
+@group_bp.route('/group/<int:group_id>/members/remove', methods=['POST'])
+def remove_member(group_id):
+    """Remove a member from group endpoint."""
+    limiter = current_app.limiter
+    limiter.limit("20 per hour")(lambda: None)()
+    return GroupController.remove_member(group_id)
+
+
 @group_bp.route('/notifications/<string:email>', methods=['GET'])
 def get_notifications(email):
     """Get notifications endpoint with pagination."""

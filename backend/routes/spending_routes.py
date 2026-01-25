@@ -38,6 +38,12 @@ def get_user_expenses(email, group_id):
     return SpendingController.get_user_expenses(email, group_id)
 
 
+@spending_bp.route('/expenses/<int:expense_id>', methods=['DELETE'])
+def delete_expense(expense_id):
+    """Delete an expense."""
+    return SpendingController.delete_expense(expense_id)
+
+
 @spending_bp.route('/summary/<string:email>/<int:group_id>', methods=['GET'])
 def get_spending_summary(email, group_id):
     """Get spending summary."""

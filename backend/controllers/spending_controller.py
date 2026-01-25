@@ -2,11 +2,11 @@
 
 from flask import request, jsonify
 from datetime import datetime, timedelta
-from backend.models.spending_target_model import SpendingTarget
-from backend.models.expense_model import Expense
-from backend.models.spending_insight_model import SpendingInsight
-from backend.models.notification_model import Notification
-from backend.models.user_model import User
+from database.models.spending_target_model import SpendingTarget
+from database.models.expense_model import Expense
+from database.models.spending_insight_model import SpendingInsight
+from database.models.notification_model import Notification
+from database.models.user_model import User
 
 
 class SpendingController:
@@ -77,6 +77,8 @@ class SpendingController:
         description = data.get('description', '')
         expense_date = data.get('expense_date', datetime.now().isoformat())
 
+        print(f"DEBUG: Create expense called - email={email}, group_id={group_id}, amount={amount}")
+
         if not all([email, group_id, amount]):
             return jsonify({'message': 'Email, group_id, and amount are required'}), 400
 
@@ -84,14 +86,20 @@ class SpendingController:
         if not user:
             return jsonify({'message': 'User not found'}), 404
 
+        print(f"DEBUG: User found - id={user['id']}")
+
         # Create expense
         result = Expense.create(group_id, user['id'], amount, category, description, expense_date)
 
         if not result['success']:
             return jsonify({'message': result['message']}), 500
 
+        print(f"DEBUG: Expense created - id={result['expense_id']}")
+
         # Check if user has an active target
         active_target = SpendingTarget.get_active_target(user['id'], group_id)
+        
+        print(f"DEBUG: Active target for user {user['id']} in group {group_id}: {active_target}")
         
         notifications_created = []
         if active_target:
@@ -103,23 +111,62 @@ class SpendingController:
             )
 
             target_amount = active_target['target_amount']
+            percentage_used = (total_spending / target_amount) * 100
             
-            # Check if overspent
+            print(f"DEBUG: Total spending: ${total_spending}, Target: ${target_amount}, Percentage: {percentage_used}%")
+            
+            # Check if exceeded target (100%)
             if total_spending > target_amount:
+                overspent_amount = total_spending - target_amount
                 overspent_percentage = ((total_spending - target_amount) / target_amount) * 100
-                message = f"⚠️ You've exceeded your {active_target['period_type']}ly target by {overspent_percentage:.1f}%! " \
-                         f"Spent: ${total_spending:.2f} / Target: ${target_amount:.2f}"
+                message = f"🚨 Budget Alert: You've exceeded your {active_target['period_type']}ly spending target by ${overspent_amount:.2f} ({overspent_percentage:.1f}%)! " \
+                         f"Total spent: ${total_spending:.2f} / Target: ${target_amount:.2f}"
+                
+                print(f"DEBUG: Creating EXCEEDED notification: {message}")
+                notif_created = Notification.create(user['id'], group_id, message)
+                print(f"DEBUG: Notification created: {notif_created}")
+                notifications_created.append({
+                    'type': 'exceeded',
+                    'message': message,
+                    'percentage': percentage_used
+                })
+            
+            # Warning at 90% threshold
+            elif total_spending > target_amount * 0.9 and total_spending <= target_amount:
+                remaining = target_amount - total_spending
+                message = f"⚠️ Budget Warning: You've used {percentage_used:.1f}% of your {active_target['period_type']}ly budget. " \
+                         f"Only ${remaining:.2f} remaining! Spent: ${total_spending:.2f} / Target: ${target_amount:.2f}"
                 
                 Notification.create(user['id'], group_id, message)
-                notifications_created.append(message)
-            elif total_spending > target_amount * 0.8:
-                # Warn when 80% of target reached
-                percentage_used = (total_spending / target_amount) * 100
-                message = f"⚠️ You've used {percentage_used:.1f}% of your {active_target['period_type']}ly budget. " \
-                         f"Spent: ${total_spending:.2f} / Target: ${target_amount:.2f}"
+                notifications_created.append({
+                    'type': 'warning_90',
+                    'message': message,
+                    'percentage': percentage_used
+                })
+            
+            # Warning at 80% threshold
+            elif total_spending > target_amount * 0.8 and total_spending <= target_amount * 0.9:
+                remaining = target_amount - total_spending
+                message = f"💡 Budget Notice: You've used {percentage_used:.1f}% of your {active_target['period_type']}ly budget. " \
+                         f"${remaining:.2f} remaining. Spent: ${total_spending:.2f} / Target: ${target_amount:.2f}"
                 
                 Notification.create(user['id'], group_id, message)
-                notifications_created.append(message)
+                notifications_created.append({
+                    'type': 'warning_80',
+                    'message': message,
+                    'percentage': percentage_used
+                })
+
+        # Generate spending behavior insights
+        insights = SpendingInsight.generate_insights(user['id'], group_id)
+        
+        # Create notifications for new insights
+        for insight_message in insights:
+            Notification.create(user['id'], group_id, f"📊 Insight: {insight_message}")
+            notifications_created.append({
+                'type': 'insight',
+                'message': insight_message
+            })
 
         return jsonify({
             'message': 'Expense created successfully',
@@ -140,6 +187,23 @@ class SpendingController:
 
         expenses = Expense.get_user_expenses(user['id'], group_id, start_date, end_date)
         return jsonify({'expenses': expenses}), 200
+
+    @staticmethod
+    def delete_expense(expense_id):
+        """Delete an expense."""
+        data = request.get_json()
+        email = data.get('email')
+
+        user = User.get_by_email(email)
+        if not user:
+            return jsonify({'message': 'User not found'}), 404
+
+        result = Expense.delete_expense(expense_id, user['id'])
+        
+        if result['success']:
+            return jsonify({'message': 'Expense deleted successfully'}), 200
+        else:
+            return jsonify({'message': 'Failed to delete expense or expense not found'}), 404
 
     @staticmethod
     def get_spending_summary(email, group_id):

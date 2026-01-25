@@ -1,8 +1,8 @@
 """Group management controller with pagination and caching."""
 
 from flask import request, jsonify, current_app
-from backend.models.group_model import Group
-from backend.models.notification_model import Notification
+from database.models.group_model import Group
+from database.models.notification_model import Notification
 
 
 class GroupController:
@@ -119,6 +119,29 @@ class GroupController:
             return jsonify({'message': result['message']}), 200
         else:
             return jsonify({'message': result['message']}), 404
+
+    @staticmethod
+    def get_group_members(group_id):
+        """Get all members of a group."""
+        members = Group.get_group_members(group_id)
+        return jsonify({'members': members}), 200
+
+    @staticmethod
+    def remove_member(group_id):
+        """Remove a member from group (owner only)."""
+        data = request.get_json()
+        owner_email = data.get('owner_email')
+        member_email = data.get('member_email')
+
+        if not owner_email or not member_email:
+            return jsonify({'message': 'Owner email and member email are required'}), 400
+
+        result = Group.remove_member(group_id, owner_email, member_email)
+
+        if result['success']:
+            return jsonify({'message': result['message']}), 200
+        else:
+            return jsonify({'message': result['message']}), 403
 
     @staticmethod
     def get_notifications(email):
