@@ -1,11 +1,12 @@
 # Ignore everything at root
 /*
 
-# Allow only these directories
+# Allow only these directories and files
 !/backend/
 !/database/
 !/frontend/
 !/.gitignore
+!/README.md
 
 # ── Python ──
 __pycache__/
