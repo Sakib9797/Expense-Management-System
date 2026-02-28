@@ -5,6 +5,7 @@ import ExpenseContext from '../../contexts/ExpenseContext';
 import AuthContext from '../../contexts/AuthContext';
 import { toast } from '../../components/ui/sonner';
 import Header from '../common/Header';
+import { Receipt, Type, Tag, DollarSign, Calendar, Clock } from 'lucide-react';
 
 const CreateExpenseForm = () => {
   const { groupId } = useParams<{ groupId: string }>();
@@ -65,105 +66,130 @@ const CreateExpenseForm = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-animated relative overflow-hidden">
+      {/* Floating blobs */}
+      <div className="absolute top-20 -left-32 w-96 h-96 bg-blue-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob" />
+      <div className="absolute top-60 -right-32 w-96 h-96 bg-purple-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob delay-2000" />
+      <div className="absolute -bottom-20 left-1/3 w-96 h-96 bg-indigo-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob delay-4000" />
+
       <Header 
         showBackButton 
         onBack={() => navigate(`/group/${groupId}`)}
         showNotification
       />
       
-      <div className="container mx-auto py-8 px-4">
-        <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-md p-8">
-          <h1 className="text-3xl font-bold mb-8 text-center">Create Expense Profile</h1>
+      <div className="container mx-auto py-8 px-4 relative z-10">
+        <div className="max-w-2xl mx-auto opacity-0 animate-scale-in">
+          <div className="glass rounded-2xl p-8 md:p-10">
+            <div className="flex justify-center mb-6">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg">
+                <Receipt className="text-white" size={28} />
+              </div>
+            </div>
+            <h1 className="text-3xl font-bold mb-8 text-center text-white">Create Expense Profile</h1>
           
-          <form onSubmit={handleSubmit}>
-            <div className="mb-6">
-              <label htmlFor="name" className="block text-gray-700 font-medium mb-2">Name:</label>
-              <input
-                id="name"
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter expense name"
-                required
-              />
-            </div>
-            
-            <div className="mb-6">
-              <label htmlFor="category" className="block text-gray-700 font-medium mb-2">Category:</label>
-              <input
-                id="category"
-                type="text"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter category"
-                required
-              />
-            </div>
-            
-            <div className="mb-6">
-              <label htmlFor="price" className="block text-gray-700 font-medium mb-2">Price:</label>
-              <input
-                id="price"
-                type="number"
-                min="0.01"
-                step="0.01"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter price"
-                required
-              />
-            </div>
-            
-            <div className="mb-6">
-              <label htmlFor="date" className="block text-gray-700 font-medium mb-2">Date:</label>
-              <div className="relative">
-                <input
-                  id="date"
-                  type="date"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-                <div className="absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                  <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                  </svg>
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div>
+                <label htmlFor="name" className="block text-sm font-medium text-white/70 mb-1.5">Name</label>
+                <div className="relative">
+                  <Type className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" size={18} />
+                  <input
+                    id="name"
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="w-full bg-white/10 border border-white/10 text-white placeholder-white/30 pl-10 pr-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-transparent transition"
+                    placeholder="Enter expense name"
+                    required
+                  />
                 </div>
               </div>
-            </div>
             
-            <div className="mb-8">
-              <label htmlFor="time" className="block text-gray-700 font-medium mb-2">Time:</label>
-              <div className="relative">
-                <input
-                  id="time"
-                  type="time"
-                  value={time}
-                  onChange={(e) => setTime(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-                <div className="absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                  <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                  </svg>
+              <div>
+                <label htmlFor="category" className="block text-sm font-medium text-white/70 mb-1.5">Category</label>
+                <div className="relative">
+                  <Tag className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" size={18} />
+                  <input
+                    id="category"
+                    type="text"
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    className="w-full bg-white/10 border border-white/10 text-white placeholder-white/30 pl-10 pr-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-transparent transition"
+                    placeholder="Enter category"
+                    required
+                  />
                 </div>
               </div>
-            </div>
             
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full bg-blue-500 text-white py-3 rounded-md hover:bg-blue-600 transition-colors font-medium disabled:opacity-50"
-            >
-              {isLoading ? 'Creating...' : 'Create Expense Profile'}
-            </button>
-          </form>
+              <div>
+                <label htmlFor="price" className="block text-sm font-medium text-white/70 mb-1.5">Price</label>
+                <div className="relative">
+                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" size={18} />
+                  <input
+                    id="price"
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    value={price}
+                    onChange={(e) => setPrice(e.target.value)}
+                    className="w-full bg-white/10 border border-white/10 text-white placeholder-white/30 pl-10 pr-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-transparent transition"
+                    placeholder="Enter price"
+                    required
+                  />
+                </div>
+              </div>
+            
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="date" className="block text-sm font-medium text-white/70 mb-1.5">Date</label>
+                  <div className="relative">
+                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" size={18} />
+                    <input
+                      id="date"
+                      type="date"
+                      value={date}
+                      onChange={(e) => setDate(e.target.value)}
+                      className="w-full bg-white/10 border border-white/10 text-white placeholder-white/30 pl-10 pr-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-transparent transition [color-scheme:dark]"
+                      required
+                    />
+                  </div>
+                </div>
+              
+                <div>
+                  <label htmlFor="time" className="block text-sm font-medium text-white/70 mb-1.5">Time</label>
+                  <div className="relative">
+                    <Clock className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" size={18} />
+                    <input
+                      id="time"
+                      type="time"
+                      value={time}
+                      onChange={(e) => setTime(e.target.value)}
+                      className="w-full bg-white/10 border border-white/10 text-white placeholder-white/30 pl-10 pr-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-transparent transition [color-scheme:dark]"
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+            
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 text-white py-3.5 rounded-xl hover:from-blue-500 hover:to-cyan-500 transition-all duration-300 font-semibold shadow-lg shadow-blue-500/25 disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {isLoading ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  <>
+                    <Receipt size={18} />
+                    Create Expense Profile
+                  </>
+                )}
+              </button>
+            </form>
+          </div>
         </div>
       </div>
     </div>

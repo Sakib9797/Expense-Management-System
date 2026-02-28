@@ -15,6 +15,7 @@ from database.db_config import init_db
 from backend.routes import auth_bp, user_bp, group_bp
 from backend.routes.spending_routes import spending_bp
 from backend.routes.chat_routes import chat_bp
+from backend.routes.ml_routes import ml_bp
 
 
 app = Flask(
@@ -48,6 +49,7 @@ app.register_blueprint(user_bp)
 app.register_blueprint(group_bp)
 app.register_blueprint(spending_bp)
 app.register_blueprint(chat_bp)
+app.register_blueprint(ml_bp)
 
 
 @app.route("/")

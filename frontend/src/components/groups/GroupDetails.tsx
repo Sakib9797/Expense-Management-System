@@ -6,7 +6,7 @@ import { toast } from '../../components/ui/sonner';
 import Header from '../common/Header';
 import GroupChat from './GroupChat';
 import DirectMessages from './DirectMessages';
-import { Users, MessageCircle, MessageSquare, Trash2, Crown } from 'lucide-react';
+import { Users, MessageCircle, MessageSquare, Trash2, Crown, Copy, Home } from 'lucide-react';
 
 const GroupDetails = () => {
   const { groupId } = useParams<{ groupId: string }>();
@@ -77,7 +77,6 @@ const GroupDetails = () => {
 
       if (res.ok) {
         toast.success('Member removed successfully');
-        // Refresh group data
         const updatedGroup = getGroupDetails(groupId);
         setGroup(updatedGroup);
       } else {
@@ -93,22 +92,23 @@ const GroupDetails = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+      <div className="min-h-screen bg-gradient-animated flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
       </div>
     );
   }
 
   if (!group) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gradient-animated relative overflow-hidden">
+        <div className="absolute top-20 -left-32 w-72 h-72 bg-purple-400 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob" />
         <Header showBackButton onBack={() => navigate('/groups')} />
-        <div className="container mx-auto py-12 px-4 text-center">
-          <h2 className="text-2xl font-bold mb-4">Group not found</h2>
-          <p className="mb-6">This group may have been deleted or you don't have access to it.</p>
+        <div className="container mx-auto py-12 px-4 text-center relative z-10">
+          <h2 className="text-2xl font-bold mb-4 text-white">Group not found</h2>
+          <p className="mb-6 text-white/70">This group may have been deleted or you don't have access to it.</p>
           <button
             onClick={() => navigate('/groups')}
-            className="bg-purple-600 text-white px-6 py-2 rounded-md hover:bg-purple-700"
+            className="bg-white/20 backdrop-blur-sm text-white px-6 py-2 rounded-lg hover:bg-white/30 transition border border-white/20"
           >
             Back to Groups
           </button>
@@ -117,199 +117,182 @@ const GroupDetails = () => {
     );
   }
 
+  const tabs = [
+    { key: 'members' as const, label: 'Members', icon: Users },
+    { key: 'chat' as const, label: 'Group Chat', icon: MessageCircle },
+    { key: 'dm' as const, label: 'Direct Messages', icon: MessageSquare },
+  ];
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-animated relative overflow-hidden">
+      {/* Floating blobs */}
+      <div className="absolute top-20 -left-32 w-96 h-96 bg-purple-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob" />
+      <div className="absolute top-60 -right-32 w-96 h-96 bg-indigo-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob delay-2000" />
+      <div className="absolute -bottom-20 left-1/3 w-96 h-96 bg-pink-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob delay-4000" />
+
       <Header 
         showBackButton 
         onBack={() => navigate('/groups')}
       />
       
-      <div className="container mx-auto py-8 px-4">
-        <div className="max-w-3xl mx-auto">
-          <div className="bg-white rounded-lg shadow-md p-6 mb-6 flex justify-between items-center">
-            <h1 className="text-2xl font-bold">{group.name}</h1>
-            <div className="flex">
-              <button
-                onClick={() => navigate(`/group/${group.id}`)}
-                className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 mr-2"
-              >
-                Group Home
-              </button>
-              {group.members.some(m => m.email === user?.email) && (
-  <button
-    onClick={handleLeaveGroup}
-    disabled={isLeavingGroup}
-    className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 disabled:opacity-50"
-  >
-    {isLeavingGroup ? 'Leaving...' : 'Leave Group'}
-  </button>
-)}
-
+      <div className="container mx-auto py-8 px-4 relative z-10">
+        <div className="max-w-4xl mx-auto">
+          {/* Header card */}
+          <div className="opacity-0 animate-fade-in">
+            <div className="glass rounded-2xl p-6 mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <h1 className="text-2xl font-bold text-white">{group.name}</h1>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => navigate(`/group/${group.id}`)}
+                  className="inline-flex items-center gap-2 bg-white/15 hover:bg-white/25 text-white px-4 py-2 rounded-xl transition border border-white/10 text-sm font-medium"
+                >
+                  <Home size={16} />
+                  Group Home
+                </button>
+                {group.members.some(m => m.email === user?.email) && (
+                  <button
+                    onClick={handleLeaveGroup}
+                    disabled={isLeavingGroup}
+                    className="inline-flex items-center gap-2 bg-red-500/30 hover:bg-red-500/50 text-red-200 px-4 py-2 rounded-xl transition border border-red-400/20 text-sm font-medium disabled:opacity-50"
+                  >
+                    {isLeavingGroup ? 'Leaving...' : 'Leave Group'}
+                  </button>
+                )}
+              </div>
             </div>
           </div>
           
-          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-            <h2 className="text-lg font-semibold mb-2">Group Code</h2>
-            <div className="bg-gray-100 p-3 rounded flex items-center justify-between">
-              <span className="font-mono font-medium">{group.code}</span>
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText(group.code);
-                  toast.success('Code copied to clipboard!');
-                }}
-                className="text-blue-600 hover:text-blue-800"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                </svg>
-              </button>
+          {/* Group Code card */}
+          <div className="opacity-0 animate-slide-up delay-100">
+            <div className="glass rounded-2xl p-6 mb-6">
+              <h2 className="text-lg font-semibold mb-3 text-white">Group Code</h2>
+              <div className="bg-white/10 rounded-xl p-3 flex items-center justify-between border border-white/10">
+                <span className="font-mono font-bold text-white text-lg tracking-wider">{group.code}</span>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(group.code);
+                    toast.success('Code copied to clipboard!');
+                  }}
+                  className="text-white/60 hover:text-white transition p-2 rounded-lg hover:bg-white/10"
+                >
+                  <Copy size={18} />
+                </button>
+              </div>
+              <p className="mt-2.5 text-sm text-white/50">
+                Share this code with others to allow them to join your group
+              </p>
             </div>
-            <p className="mt-2 text-sm text-gray-500">
-              Share this code with others to allow them to join your group
-            </p>
           </div>
           
           {/* Tabs */}
-          <div className="bg-white rounded-lg shadow-md mb-6">
-            <div className="border-b">
-              <div className="flex">
-                <button
-                  onClick={() => setActiveTab('members')}
-                  className={`flex-1 px-6 py-4 text-center font-medium transition flex items-center justify-center gap-2 ${
-                    activeTab === 'members'
-                      ? 'border-b-2 border-purple-600 text-purple-600'
-                      : 'text-gray-600 hover:text-gray-800'
-                  }`}
-                >
-                  <Users size={20} />
-                  Members
-                </button>
-                <button
-                  onClick={() => setActiveTab('chat')}
-                  className={`flex-1 px-6 py-4 text-center font-medium transition flex items-center justify-center gap-2 ${
-                    activeTab === 'chat'
-                      ? 'border-b-2 border-purple-600 text-purple-600'
-                      : 'text-gray-600 hover:text-gray-800'
-                  }`}
-                >
-                  <MessageCircle size={20} />
-                  Group Chat
-                </button>
-                <button
-                  onClick={() => setActiveTab('dm')}
-                  className={`flex-1 px-6 py-4 text-center font-medium transition flex items-center justify-center gap-2 ${
-                    activeTab === 'dm'
-                      ? 'border-b-2 border-purple-600 text-purple-600'
-                      : 'text-gray-600 hover:text-gray-800'
-                  }`}
-                >
-                  <MessageSquare size={20} />
-                  Direct Messages
-                </button>
+          <div className="opacity-0 animate-slide-up delay-200">
+            <div className="glass rounded-2xl overflow-hidden">
+              <div className="border-b border-white/10">
+                <div className="flex">
+                  {tabs.map((tab) => {
+                    const Icon = tab.icon;
+                    return (
+                      <button
+                        key={tab.key}
+                        onClick={() => setActiveTab(tab.key)}
+                        className={`flex-1 px-4 py-4 text-center font-medium transition flex items-center justify-center gap-2 text-sm ${
+                          activeTab === tab.key
+                            ? 'border-b-2 border-white text-white bg-white/10'
+                            : 'text-white/50 hover:text-white/80 hover:bg-white/5'
+                        }`}
+                      >
+                        <Icon size={18} />
+                        {tab.label}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
 
-            <div className="p-6">
-              {activeTab === 'members' && (
-                <div>
-                  <h2 className="text-lg font-semibold mb-4">Group Members ({group.members.length})</h2>
-                  <div className="overflow-hidden">
-                    <table className="min-w-full">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Name
-                          </th>
-                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Email
-                          </th>
-                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Joined
-                          </th>
-                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Actions
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {group.members.map((member) => {
-                          const isOwner = group.createdBy === member.email;
-                          const isCurrentUser = member.email === user?.email;
-                          const isUserOwner = group.createdBy === user?.email;
+              <div className="p-6">
+                {activeTab === 'members' && (
+                  <div>
+                    <h2 className="text-lg font-semibold mb-4 text-white">Group Members ({group.members.length})</h2>
+                    <div className="space-y-2">
+                      {group.members.map((member) => {
+                        const isOwner = group.createdBy === member.email;
+                        const isCurrentUser = member.email === user?.email;
+                        const isUserOwner = group.createdBy === user?.email;
 
-                          return (
-                            <tr key={member.userId} className={isCurrentUser ? "bg-purple-50" : ""}>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <div className="flex items-center gap-2">
-                                  <div className="text-sm font-medium text-gray-900">
+                        return (
+                          <div
+                            key={member.userId}
+                            className={`flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl transition ${
+                              isCurrentUser ? 'bg-white/15 border border-white/20' : 'bg-white/5 border border-white/5 hover:bg-white/10'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-md">
+                                {(member.fullName || member.email.split('@')[0]).charAt(0).toUpperCase()}
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="text-white font-medium">
                                     {member.fullName || member.email.split('@')[0]}
-                                    {isCurrentUser && (
-                                      <span className="ml-2 text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full">
-                                        You
-                                      </span>
-                                    )}
-                                    {isOwner && (
-                                      <span className="ml-2 text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full inline-flex items-center gap-1">
-                                        <Crown size={12} />
-                                        Owner
-                                      </span>
-                                    )}
-                                  </div>
+                                  </span>
+                                  {isCurrentUser && (
+                                    <span className="text-xs bg-purple-500/30 text-purple-200 px-2 py-0.5 rounded-full border border-purple-400/20">
+                                      You
+                                    </span>
+                                  )}
+                                  {isOwner && (
+                                    <span className="text-xs bg-amber-500/30 text-amber-200 px-2 py-0.5 rounded-full inline-flex items-center gap-1 border border-amber-400/20">
+                                      <Crown size={10} />
+                                      Owner
+                                    </span>
+                                  )}
                                 </div>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <div className="text-sm text-gray-500">{member.email}</div>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {new Date(member.joinedAt).toLocaleDateString()}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                {isCurrentUser && isUserOwner ? (
-                                  // Owner on their own row - show nothing
-                                  null
-                                ) : isCurrentUser ? (
-                                  // Regular member on their own row - show Leave button
-                                  <button
-                                    onClick={handleLeaveGroup}
-                                    disabled={isLeavingGroup}
-                                    className="text-red-600 hover:text-red-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
-                                  >
-                                    <Trash2 size={16} />
-                                    {isLeavingGroup ? 'Leaving...' : 'Leave'}
-                                  </button>
-                                ) : isUserOwner ? (
-                                  // Owner viewing other members - show Remove button
-                                  <button
-                                    onClick={() => handleRemoveMember(member.email, member.fullName || member.email.split('@')[0])}
-                                    disabled={removingMemberId === member.userId}
-                                    className="text-red-600 hover:text-red-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
-                                  >
-                                    <Trash2 size={16} />
-                                    {removingMemberId === member.userId ? 'Removing...' : 'Remove'}
-                                  </button>
-                                ) : null}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
+                                <p className="text-white/40 text-sm">{member.email}</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-4 mt-2 sm:mt-0">
+                              <span className="text-white/30 text-xs">
+                                Joined {new Date(member.joinedAt).toLocaleDateString()}
+                              </span>
+                              {isCurrentUser && isUserOwner ? null : isCurrentUser ? (
+                                <button
+                                  onClick={handleLeaveGroup}
+                                  disabled={isLeavingGroup}
+                                  className="text-red-300 hover:text-red-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 text-sm bg-red-500/20 px-3 py-1.5 rounded-lg hover:bg-red-500/30 transition"
+                                >
+                                  <Trash2 size={14} />
+                                  {isLeavingGroup ? 'Leaving...' : 'Leave'}
+                                </button>
+                              ) : isUserOwner ? (
+                                <button
+                                  onClick={() => handleRemoveMember(member.email, member.fullName || member.email.split('@')[0])}
+                                  disabled={removingMemberId === member.userId}
+                                  className="text-red-300 hover:text-red-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 text-sm bg-red-500/20 px-3 py-1.5 rounded-lg hover:bg-red-500/30 transition"
+                                >
+                                  <Trash2 size={14} />
+                                  {removingMemberId === member.userId ? 'Removing...' : 'Remove'}
+                                </button>
+                              ) : null}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {activeTab === 'chat' && (
-                <div className="h-[600px]">
-                  <GroupChat />
-                </div>
-              )}
+                {activeTab === 'chat' && (
+                  <div className="h-[600px]">
+                    <GroupChat />
+                  </div>
+                )}
 
-              {activeTab === 'dm' && (
-                <div className="h-[600px]">
-                  <DirectMessages />
-                </div>
-              )}
+                {activeTab === 'dm' && (
+                  <div className="h-[600px]">
+                    <DirectMessages />
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

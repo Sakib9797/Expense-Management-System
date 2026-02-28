@@ -7,6 +7,7 @@ from database.models.expense_model import Expense
 from database.models.spending_insight_model import SpendingInsight
 from database.models.notification_model import Notification
 from database.models.user_model import User
+from backend.ml.engine import MLEngine
 
 
 class SpendingController:
@@ -88,6 +89,17 @@ class SpendingController:
 
         print(f"DEBUG: User found - id={user['id']}")
 
+        # ML: auto-categorise if description provided and category is 'other' or missing
+        ml_suggestion = None
+        if description and category in ('other', '', None):
+            try:
+                ml_result = MLEngine.predict_category(description, user['id'], group_id)
+                if ml_result['confidence'] >= 0.3:
+                    category = ml_result['predicted_category']
+                    ml_suggestion = ml_result
+            except Exception:
+                pass  # fallback to manual category
+
         # Create expense
         result = Expense.create(group_id, user['id'], amount, category, description, expense_date)
 
@@ -168,11 +180,42 @@ class SpendingController:
                 'message': insight_message
             })
 
-        return jsonify({
+        # ML: retrain categoriser with new data point
+        try:
+            MLEngine.retrain_categoriser(user['id'], group_id)
+        except Exception:
+            pass
+
+        # ML: check for anomaly on the just-created expense
+        anomaly_flag = None
+        try:
+            anomalies = MLEngine.detect_anomalies(user['id'], group_id)
+            for a in anomalies:
+                if a['expense_id'] == result['expense_id']:
+                    anomaly_flag = a
+                    Notification.create(
+                        user['id'], group_id,
+                        f"🤖 Anomaly Detected: {a['reason']}"
+                    )
+                    notifications_created.append({
+                        'type': 'anomaly',
+                        'message': a['reason']
+                    })
+                    break
+        except Exception:
+            pass
+
+        response_data = {
             'message': 'Expense created successfully',
             'expense_id': result['expense_id'],
             'notifications': notifications_created
-        }), 201
+        }
+        if ml_suggestion:
+            response_data['ml_category_suggestion'] = ml_suggestion
+        if anomaly_flag:
+            response_data['anomaly'] = anomaly_flag
+
+        return jsonify(response_data), 201
 
     @staticmethod
     def get_user_expenses(email, group_id):

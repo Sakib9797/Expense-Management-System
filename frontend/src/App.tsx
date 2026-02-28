@@ -34,6 +34,7 @@ import ItemsPriceList from "./components/expenses/ItemsPriceList";
 import SpendingDashboard from "./components/spending/SpendingDashboard";
 import AddExpense from "./components/spending/AddExpense";
 import SetSpendingTarget from "./components/spending/SetSpendingTarget";
+import MLDashboard from "./components/spending/MLDashboard";
 
 // Protected Route
 import ProtectedRoute from "./components/common/ProtectedRoute";
@@ -75,6 +76,7 @@ const App = () => {
                   <Route path="/group/:groupId/spending" element={<ProtectedRoute><SpendingDashboard /></ProtectedRoute>} />
                   <Route path="/group/:groupId/add-expense" element={<ProtectedRoute><AddExpense /></ProtectedRoute>} />
                   <Route path="/group/:groupId/set-target" element={<ProtectedRoute><SetSpendingTarget /></ProtectedRoute>} />
+                  <Route path="/group/:groupId/ml-insights" element={<ProtectedRoute><MLDashboard /></ProtectedRoute>} />
 
                   {/* 404 Route */}
                   <Route path="*" element={<NotFound />} />

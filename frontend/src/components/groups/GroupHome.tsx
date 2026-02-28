@@ -4,6 +4,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import GroupContext, { Group } from '../../contexts/GroupContext';
 import { toast } from '../../components/ui/sonner';
 import Header from '../common/Header';
+import { BarChart3, Brain, PlusCircle, FileText, CreditCard, ArrowRight, Info } from 'lucide-react';
 
 const GroupHome = () => {
   const { groupId } = useParams<{ groupId: string }>();
@@ -23,22 +24,23 @@ const GroupHome = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+      <div className="min-h-screen bg-gradient-animated flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
       </div>
     );
   }
 
   if (!group) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gradient-animated relative overflow-hidden">
+        <div className="absolute top-20 -left-32 w-72 h-72 bg-purple-400 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob" />
         <Header showBackButton onBack={() => navigate('/groups')} />
-        <div className="container mx-auto py-12 px-4 text-center">
-          <h2 className="text-2xl font-bold mb-4">Group not found</h2>
-          <p className="mb-6">This group may have been deleted or you don't have access to it.</p>
+        <div className="container mx-auto py-12 px-4 text-center relative z-10">
+          <h2 className="text-2xl font-bold mb-4 text-white">Group not found</h2>
+          <p className="mb-6 text-white/70">This group may have been deleted or you don't have access to it.</p>
           <button
             onClick={() => navigate('/groups')}
-            className="bg-purple-600 text-white px-6 py-2 rounded-md hover:bg-purple-700"
+            className="bg-white/20 backdrop-blur-sm text-white px-6 py-2 rounded-lg hover:bg-white/30 transition border border-white/20"
           >
             Back to Groups
           </button>
@@ -47,71 +49,98 @@ const GroupHome = () => {
     );
   }
 
+  const actionCards = [
+    {
+      to: `/group/${group.id}/spending`,
+      icon: BarChart3,
+      label: 'Spending & Insights',
+      gradient: 'from-orange-500 to-amber-500',
+      iconBg: 'bg-orange-400/30',
+    },
+    {
+      to: `/group/${group.id}/ml-insights`,
+      icon: Brain,
+      label: 'AI / ML Insights',
+      gradient: 'from-indigo-500 to-violet-500',
+      iconBg: 'bg-indigo-400/30',
+    },
+    {
+      to: `/group/${group.id}/create-expense`,
+      icon: PlusCircle,
+      label: 'Create Expense Profile',
+      gradient: 'from-blue-500 to-cyan-500',
+      iconBg: 'bg-blue-400/30',
+    },
+    {
+      to: `/group/${group.id}/expense-profiles`,
+      icon: FileText,
+      label: 'Expense Profiles',
+      gradient: 'from-purple-500 to-fuchsia-500',
+      iconBg: 'bg-purple-400/30',
+    },
+    {
+      to: `/group/${group.id}/items`,
+      icon: CreditCard,
+      label: 'Items Price',
+      gradient: 'from-emerald-500 to-teal-500',
+      iconBg: 'bg-emerald-400/30',
+    },
+  ];
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-animated relative overflow-hidden">
+      {/* Floating blobs */}
+      <div className="absolute top-20 -left-32 w-96 h-96 bg-purple-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob" />
+      <div className="absolute top-40 -right-32 w-96 h-96 bg-indigo-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob delay-2000" />
+      <div className="absolute -bottom-20 left-1/2 w-96 h-96 bg-pink-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob delay-4000" />
+
       <Header 
         showBackButton 
         onBack={() => navigate('/groups')}
         showNotification
       />
       
-      <div className="container mx-auto py-8 px-4">
-        <div className="max-w-3xl mx-auto">
-          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-            <h1 className="text-2xl font-bold mb-2">{group.name}</h1>
-            <p className="text-gray-600 mb-4">{group.description}</p>
-            <div className="flex justify-end">
-              <Link
-                to={`/group/${group.id}/details`}
-                className="text-purple-600 hover:text-purple-800 font-medium"
-              >
-                View Group Details
-              </Link>
+      <div className="container mx-auto py-8 px-4 relative z-10">
+        <div className="max-w-5xl mx-auto">
+          {/* Group info card */}
+          <div className="opacity-0 animate-fade-in">
+            <div className="glass rounded-2xl p-6 mb-8 hover-lift">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h1 className="text-3xl font-bold text-white mb-2">{group.name}</h1>
+                  <p className="text-white/70 text-lg">{group.description}</p>
+                </div>
+                <Link
+                  to={`/group/${group.id}/details`}
+                  className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg transition border border-white/10"
+                >
+                  <Info size={18} />
+                  <span className="font-medium">Details</span>
+                </Link>
+              </div>
             </div>
           </div>
           
-          <div className="flex flex-col items-center py-12">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl w-full">
-              <Link
-                to={`/group/${group.id}/spending`}
-                className="bg-orange-500 hover:bg-orange-600 text-white rounded-lg p-6 text-center shadow-md transition-colors"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-                <span className="font-medium">Spending & Insights</span>
-              </Link>
-              
-              <Link
-                to={`/group/${group.id}/create-expense`}
-                className="bg-blue-500 hover:bg-blue-600 text-white rounded-lg p-6 text-center shadow-md transition-colors"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                </svg>
-                <span className="font-medium">Create Expense Profile</span>
-              </Link>
-              
-              <Link
-                to={`/group/${group.id}/expense-profiles`}
-                className="bg-purple-500 hover:bg-purple-600 text-white rounded-lg p-6 text-center shadow-md transition-colors"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                <span className="font-medium">Expense Profiles</span>
-              </Link>
-              
-              <Link
-                to={`/group/${group.id}/items`}
-                className="bg-green-500 hover:bg-green-600 text-white rounded-lg p-6 text-center shadow-md transition-colors"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                </svg>
-                <span className="font-medium">Items Price</span>
-              </Link>
-            </div>
+          {/* Action cards grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
+            {actionCards.map((card, index) => {
+              const Icon = card.icon;
+              return (
+                <Link
+                  key={card.to}
+                  to={card.to}
+                  className={`opacity-0 animate-slide-up delay-${(index + 1) * 100} group`}
+                >
+                  <div className="glass rounded-2xl p-6 text-center hover-lift h-full flex flex-col items-center justify-center transition-all duration-300 group-hover:bg-white/20">
+                    <div className={`w-16 h-16 rounded-xl bg-gradient-to-br ${card.gradient} flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+                      <Icon className="text-white" size={28} />
+                    </div>
+                    <span className="font-semibold text-white text-sm">{card.label}</span>
+                    <ArrowRight className="text-white/0 group-hover:text-white/60 mt-2 transition-all duration-300 transform group-hover:translate-x-1" size={16} />
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         </div>
       </div>
